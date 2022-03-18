@@ -8,11 +8,11 @@ let scrollPositionX = 0;
 let scrollPositionY = 0;
 let leftClicking = false;
 let rightClicking = false;
+let currentColor = 'black';
 
 const socket = io();
 
 function emit(name, data){
-    // console.log(name, data);
     socket.emit(name, data);
 }
 
@@ -86,7 +86,7 @@ function draw(strokes = [], clearAreas = []){
 function onLeftClick(e){
     if (!rightClicking){
         leftClicking = true;
-        emit('left_click', {color: 'red', pos: getMouseEventGlobalPosition(e)});
+        emit('left_click', {color: currentColor, pos: getMouseEventGlobalPosition(e)});
     }
 }
 
@@ -136,6 +136,36 @@ function redo(){
     }
 }
 
+function drawColorSelector(){
+    const COLORS = ['red', 'green', 'blue', 'magenta', 'lime', 'cyan', 'purple', 'yellow', 'orange', 'white', 'black']
+
+    let div = document.getElementById('colors');
+    
+    for (let color of COLORS){
+        let button = document.createElement('button');
+        button.style.backgroundColor = color;
+        button.classList.add('color')
+
+        button.onclick = () => {
+            currentColor = color;
+            for (let btn of div.children){
+                if (button == btn){
+                    btn.disabled = true;
+                    btn.classList.add('flashing')
+                }
+                else{
+                    btn.disabled = false;
+                    btn.classList.remove('flashing')
+                }
+            }
+        }
+
+        div.appendChild(button);
+    }
+
+    div.children[0].click();
+}
+
 canvas.onmousedown = e => {
     switch (e.button) {
         case 0:
@@ -172,6 +202,8 @@ canvas.oncontextmenu = e => {
 }
 
 document.body.onload = () => {
+    drawColorSelector();
+
     let username = prompt('Enter a username!');
     // let username = 'ree'
     while (!username){
@@ -181,7 +213,7 @@ document.body.onload = () => {
     emit('username', username);
 }
 
-document.body.onkeypress = e => {
+document.body.onkeydown = e => {
     const key = e.key.toLowerCase();
 
     switch (key) {
@@ -194,9 +226,9 @@ document.body.onkeypress = e => {
             break;
 
         case 'q':
-            //if (confirm('Are you sure you want to clear everything?')){
-            //    emit('clearall');
-            //}
+            if (confirm('Are you sure you want to clear everything?')){
+               emit('clearall');
+            }
             break;
     }
 }
